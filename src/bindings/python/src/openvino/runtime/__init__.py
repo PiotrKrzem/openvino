@@ -5,12 +5,6 @@
 # noqa: F401
 
 from openvino.utils import add_openvino_libs_to_path
-from pkg_resources import get_distribution, DistributionNotFound
-
-try:
-    __version__ = get_distribution("openvino-core").version
-except DistributionNotFound:
-    __version__ = "0.0.0.dev0"
 
 add_openvino_libs_to_path()
 
@@ -48,6 +42,8 @@ from openvino.pyopenvino import ProfilingInfo
 from openvino.pyopenvino import get_version
 from openvino.pyopenvino import get_batch
 from openvino.pyopenvino import set_batch
+
+__version__ = get_version()
 
 # Import opsets
 from openvino.runtime import opset1
