@@ -17,6 +17,14 @@ class aten_quantize_per_tensor_aten_dequantize(torch.nn.Module):
     def forward(self, input_tensor):
         quantized_tensor =  torch.quantize_per_tensor(input_tensor, self.scale, self.zero_point, self.dtype)
         dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_tensor(dequantized_tensor, self.scale, self.zero_point, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_tensor(dequantized_tensor, self.scale, self.zero_point, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_tensor(dequantized_tensor, self.scale, self.zero_point, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_tensor(dequantized_tensor, self.scale, self.zero_point, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
         return dequantized_tensor
 
 class aten_quantize_per_channel_aten_dequantize(torch.nn.Module):
@@ -28,6 +36,14 @@ class aten_quantize_per_channel_aten_dequantize(torch.nn.Module):
         self.axis = axis
     def forward(self, input_tensor):
         quantized_tensor =  torch.quantize_per_channel(input_tensor, self.scales, self.zero_points, self.axis, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_channel(dequantized_tensor, self.scales, self.zero_points, self.axis, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_channel(dequantized_tensor, self.scales, self.zero_points, self.axis, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_channel(dequantized_tensor, self.scales, self.zero_points, self.axis, self.dtype)
+        dequantized_tensor = torch.dequantize(quantized_tensor)
+        quantized_tensor =  torch.quantize_per_channel(dequantized_tensor, self.scales, self.zero_points, self.axis, self.dtype)
         dequantized_tensor = torch.dequantize(quantized_tensor)
         return dequantized_tensor
 

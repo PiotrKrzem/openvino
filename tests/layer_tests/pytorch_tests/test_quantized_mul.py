@@ -27,7 +27,7 @@ class TestQuantizedMul(PytorchLayerTest):
                 np.array(5.00 * np.random.rand(100, 100) + 5.00, dtype=np.float32))
 
     @pytest.mark.parametrize("scale", [
-        1.0, 0.21, 0.62
+        0.9999, 0.21, 0.62, 1.0
     ])
     @pytest.mark.parametrize("zero_point", [
         0, 4, -7
