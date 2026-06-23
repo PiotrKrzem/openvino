@@ -1,5 +1,4 @@
 __pycache__/
 *.pyc
 perf_results.json
-ovirt_minicpm/
 ov_minicpm/

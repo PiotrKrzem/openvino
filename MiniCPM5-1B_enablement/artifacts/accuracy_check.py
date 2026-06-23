@@ -47,7 +47,7 @@ def _cosine_per_token(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     a = a.astype(np.float64)
     b = b.astype(np.float64)
     num = np.sum(a * b, axis=-1)
-    den = np.linalg.norm(a, axis=-1) * np.linalg.norm(b, axis=-1) + 1e-12
+    den = (np.linalg.norm(a, axis=-1) + 1e-12) * (np.linalg.norm(b, axis=-1) + 1e-12)
     return num / den
 
 

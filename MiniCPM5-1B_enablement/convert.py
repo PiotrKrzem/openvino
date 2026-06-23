@@ -41,9 +41,14 @@ def convert(model_id: str, output: str, weight_format: str, trust_remote_code: b
         "export": True,
         "trust_remote_code": trust_remote_code,
     }
-    # optimum-intel >= 1.16 accepts a quantization/weight format hint.
+    # Weight compression to int8/int4 is driven by an explicit weight-only
+    # quantization config (optimum-intel >= 1.16).
     if weight_format in ("int8", "int4"):
-        export_kwargs["load_in_8bit"] = weight_format == "int8"
+        from optimum.intel import OVWeightQuantizationConfig
+
+        export_kwargs["quantization_config"] = OVWeightQuantizationConfig(
+            bits=8 if weight_format == "int8" else 4
+        )
 
     print(f"[INFO] Exporting {model_id} -> {out_dir} (weight_format={weight_format})")
     ov_model = OVModelForCausalLM.from_pretrained(model_id, **export_kwargs)
