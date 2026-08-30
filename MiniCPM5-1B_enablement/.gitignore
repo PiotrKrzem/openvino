@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+perf_results.json
+ov_minicpm/
