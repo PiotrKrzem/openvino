@@ -196,7 +196,7 @@
 #include "transformations/einsum_decomposition.hpp"
 #include "transformations/fp16_compression/convert_compression_only_to_legacy.hpp"
 #include "transformations/fp16_compression/mark_decompression_convert_constant_folding.hpp"
-#include "transformations/fp16_compression/mark_math_before_floor_to_keep_f16_rounding.hpp"
+#include "transformations/fp16_compression/mark_math_before_discontinuous_ops_to_keep_f16_rounding.hpp"
 #include "transformations/init_node_info.hpp"
 #include "transformations/normalize_l2_decomposition.hpp"
 #include "transformations/low_precision/mark_dequantization_subgraph.hpp"
@@ -798,8 +798,9 @@ void TransformationsPipeline::apply(std::shared_ptr<ov::Model> func) {
         // Without this, the f16 rounding between operations is lost, causing incorrect results
         // for downstream ops.
         //
-        // ov::pass::MarkMathBeforeFloorToKeepF16Rounding marks only the Math nodes that are actually
-        // followed by a Floor with disable_conversion(f16, f32); the callback below only acts on nodes
+        // ov::pass::MarkMathBeforeDiscontinuousOpsToKeepF16Rounding marks only the Math nodes that are actually
+        // followed by a discontinuous operation (Floor, Ceiling, Round, Sign, Mod, FloorMod) with
+        // disable_conversion(f16, f32); the callback below only acts on nodes
         // carrying that marker, so unrelated occurrences of these ops keep the normal f32 fast path.
         auto wrap_math_to_preserve_f16 = [](const std::shared_ptr<ov::Node>& node, const precisions_map& /* precisions */) -> bool {
             if (!ov::is_conversion_disabled(node, ov::element::f16, ov::element::f32)) {
@@ -831,7 +832,7 @@ void TransformationsPipeline::apply(std::shared_ptr<ov::Model> func) {
         };
 
         type_to_fuse_map fp_type_to_fuse = {};
-        manager.register_pass<ov::pass::MarkMathBeforeFloorToKeepF16Rounding>();
+        manager.register_pass<ov::pass::MarkMathBeforeDiscontinuousOpsToKeepF16Rounding>();
         for (const auto& type_info : {ov::op::v0::Cos::get_type_info_static(),
                                       ov::op::v0::Cosh::get_type_info_static(),
                                       ov::op::v0::Sin::get_type_info_static(),

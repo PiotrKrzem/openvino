@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "shared_test_classes/subgraph/math_floor_f16.hpp"
+#include "shared_test_classes/subgraph/math_discontinuous_op_f16.hpp"
 
 namespace ov::test {
 
-TEST_P(MathFloorF16Test, Inference) {
+TEST_P(MathDiscontinuousOpF16Test, Inference) {
     run();
 }
 

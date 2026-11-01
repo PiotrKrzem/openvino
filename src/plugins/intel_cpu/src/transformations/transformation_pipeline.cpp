@@ -106,7 +106,7 @@
 #include "transformations/fp16_compression/disable_bf16_comp_ltx_rope.hpp"
 #include "transformations/fp16_compression/mark_decompression_convert_constant_folding.hpp"
 #include "transformations/fp16_compression/mark_floatpoint_range.hpp"
-#include "transformations/fp16_compression/mark_math_before_floor_to_keep_f16_rounding.hpp"
+#include "transformations/fp16_compression/mark_math_before_discontinuous_ops_to_keep_f16_rounding.hpp"
 #include "transformations/init_node_info.hpp"
 #include "transformations/op_conversions/convert_avgpool_downgrade.hpp"
 #include "transformations/op_conversions/convert_batch_to_space.hpp"
@@ -577,13 +577,14 @@ void Transformations::PreLpt(const std::vector<ov::element::Type>& defaultPrecis
 
     type_to_fuse_map type_to_fuse = {{ov::op::v0::Convert::get_type_info_static(), fuse_type_to_convert}};
 
-    // Preserve f16 precision at the output of Math-type operations that directly feed a Floor,
-    // during f16->f32 conversion. The CPU Math node only computes in f32 so normally ConvertPrecision
-    // converts all f16 edges to f32. This eliminates the f16 rounding, which changes the Floor result
-    // (e.g. cos(x) == 0.99998 in f32 stays < 1.0, but rounds up to 1.0 in f16).
+    // Preserve f16 precision at the output of Math-type operations that directly feed a discontinuous operation
+    // (Floor, Ceiling, Round, Sign, Mod, FloorMod), during f16->f32 conversion. The CPU Math node only computes
+    // in f32 so normally ConvertPrecision converts all f16 edges to f32. This eliminates the f16 rounding, which
+    // changes the result of the discontinuous operation (e.g. cos(x) == 0.99998 in f32 stays < 1.0, but rounds
+    // up to 1.0 in f16, so Floor gives 0 instead of 1).
     //
-    // ov::pass::MarkMathBeforeFloorToKeepF16Rounding marks only the Math nodes that are actually
-    // followed by a Floor with disable_conversion(f16, f32); the callback below only acts on nodes
+    // ov::pass::MarkMathBeforeDiscontinuousOpsToKeepF16Rounding marks only the Math nodes that are actually
+    // followed by such an operation with disable_conversion(f16, f32); the callback below only acts on nodes
     // carrying that marker, so unrelated occurrences of these ops keep the normal f32 fast path.
     auto wrap_math_to_preserve_f16 = [](const std::shared_ptr<ov::Node>& node,
                                         const precisions_map& /* precisions */) -> bool {
@@ -618,7 +619,7 @@ void Transformations::PreLpt(const std::vector<ov::element::Type>& defaultPrecis
         return true;
     };
 
-    CPU_REGISTER_PASS_COMMON(manager, ov::pass::MarkMathBeforeFloorToKeepF16Rounding);
+    CPU_REGISTER_PASS_COMMON(manager, ov::pass::MarkMathBeforeDiscontinuousOpsToKeepF16Rounding);
     for (const auto& type_info : {ov::op::v0::Cos::get_type_info_static(),
                                   ov::op::v0::Cosh::get_type_info_static(),
                                   ov::op::v0::Sin::get_type_info_static(),
@@ -698,8 +699,9 @@ void Transformations::PreLpt(const std::vector<ov::element::Type>& defaultPrecis
     CPU_REGISTER_PASS_COMMON(manager, ov::pass::ConstantFolding);
     CPU_REGISTER_PASS_ARM64(manager, ov::pass::HardSigmoidDecomposition);
 #if defined(OPENVINO_ARCH_ARM64)
-    // Keep HardSigmoid marked by MarkMathBeforeFloorToKeepF16Rounding intact: the marker is not propagated to
-    // the decomposed subgraph, so decomposing it would lose the f16 rounding preserved by ConvertPrecision.
+    // Keep HardSigmoid marked by MarkMathBeforeDiscontinuousOpsToKeepF16Rounding intact: the marker is not
+    // propagated to the decomposed subgraph, so decomposing it would lose the f16 rounding preserved by
+    // ConvertPrecision.
     CPU_SET_CALLBACK_COMMON(
         manager,
         [](const_node_ptr& node) -> bool {
